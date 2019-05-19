@@ -133,8 +133,8 @@ class TpLinkSmartPlugPlugin:
         pass
 
     def onHeartbeat(self):
-        self.update_switch_state()
         if self.heartbeatcounter % self.interval == 0:
+            self.update_switch_state()
             self.update_emeter_values()
 
         self.heartbeatcounter += 1
