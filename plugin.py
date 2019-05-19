@@ -6,9 +6,9 @@
 # Author: Dan Hallgren
 #
 """
-<plugin key="tplinksmartplug" name="TP-Link Wi-Fi Smart Plug HS100/HS110" version="0.1.0">
+<plugin key="tplinksmartplug" name="TP-Link Wi-Fi Smart Plug/Switch HS100/HS110/HS200" version="0.1.0">
     <description>
-        <h2>TP-Link Wi-Fi Smart Plug</h2>
+        <h2>TP-Link Wi-Fi Smart Plug/Switch</h2>
         <ul style="list-sytel-type:square">
             <li>on/off switching</li>
             <li>emeter realtime power (HS110)</li>
@@ -29,6 +29,7 @@
              <options>
                 <option label="HS100" value="HS100" default="true"/>
                 <option label="HS110" value="HS110"  default="false" />
+                <option label="HS200" value="HS200"  default="false" />
             </options>
         </param>
         <param field="Mode6" label="Debug" width="75px">
@@ -132,6 +133,7 @@ class TpLinkSmartPlugPlugin:
         pass
 
     def onHeartbeat(self):
+        self.update_switch_state()
         if self.heartbeatcounter % self.interval == 0:
             self.update_emeter_values()
 
@@ -198,6 +200,15 @@ class TpLinkSmartPlugPlugin:
                 Devices[2].Update(nValue=int(1 * realtime_result['current']), sValue=str(realtime_result['current']))
                 Devices[3].Update(nValue=int(1 * realtime_result['voltage']), sValue=str(realtime_result['voltage']))
                 Devices[4].Update(nValue=int(1 * realtime_result['power']), sValue=str(realtime_result['power']))
+
+    def update_switch_state(self):
+        state = self.get_switch_state()
+        if state in 'off':
+            Devices[1].Update(0, '0')
+        elif state in 'on':
+            Devices[1].Update(1, '100')
+        else:
+            Devices[1].Update(1, '50')
 
     def get_switch_state(self):
         cmd = {
