@@ -202,13 +202,14 @@ class TpLinkSmartPlugPlugin:
                 Devices[4].Update(nValue=int(1 * realtime_result['power']), sValue=str(realtime_result['power']))
 
     def update_switch_state(self):
-        state = self.get_switch_state()
-        if state in 'off':
-            Devices[1].Update(0, '0')
-        elif state in 'on':
-            Devices[1].Update(1, '100')
-        else:
-            Devices[1].Update(1, '50')
+        if Parameters["Mode1"] == "HS200":
+            state = self.get_switch_state()
+            if state in 'off':
+                Devices[1].Update(0, '0')
+            elif state in 'on':
+                Devices[1].Update(1, '100')
+            else:
+                Devices[1].Update(1, '50')
 
     def get_switch_state(self):
         cmd = {
