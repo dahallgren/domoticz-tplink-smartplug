@@ -6,7 +6,7 @@ forked from https://github.com/dahallgren/domoticz-tplink-smartplug
 Clone repository into your Domoticz plugins folder
 
     cd domoticz/plugins
-    git clone https://github.com/Xorfor/Domoticz-BatteryLevels-Plugin.git
+    git clone https://github.com/J0hnMatrix/domoticz-tplink-smartplug.git
 
 Restart domoticz
 
