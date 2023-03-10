@@ -28,7 +28,8 @@
         <param field="Mode1" label="Model" width="150px" required="false">
              <options>
                 <option label="HS100" value="HS100" default="true"/>
-                <option label="HS110" value="HS110"  default="false" />
+                <option label="HS110" value="HS110"  default="false"/>
+                <option label="HS110v2" value="HS110v2"  default="false"/>
             </options>
         </param>
         <param field="Mode6" label="Debug" width="75px">
@@ -66,11 +67,11 @@ class TpLinkSmartPlugPlugin:
             Domoticz.Device(Name="switch", Unit=1, TypeName="Switch", Used=1).Create()
             Domoticz.Log("Tp-Link smart plug device created")
 
-        if Parameters["Mode1"] == "HS110" and len(Devices) <= 1:
+        if (Parameters["Mode1"] == "HS110" or Parameters["Mode1"] == "HS110v2") and len(Devices) <= 1:
             # Create more devices here
-            Domoticz.Device(Name="emeter current (A)", Unit=2, Type=243, Subtype=23).Create()
-            Domoticz.Device(Name="emeter voltage (V)", Unit=3, Type=243, Subtype=8).Create()
-            Domoticz.Device(Name="emeter power (W)", Unit=4, Type=243, Subtype=31, Image=1, Used=1).Create()
+            Domoticz.Device(Name="(A)", Unit=2, Type=243, Subtype=23).Create()
+            Domoticz.Device(Name="(V)", Unit=3, Type=243, Subtype=8).Create()
+            Domoticz.Device(Name="(W)", Unit=4, Type=243, Subtype=29).Create()
 
         state = self.get_switch_state()
         if state in 'off':
@@ -134,7 +135,13 @@ class TpLinkSmartPlugPlugin:
     def onHeartbeat(self):
         if self.heartbeatcounter % self.interval == 0:
             self.update_emeter_values()
-
+        state = self.get_switch_state()
+        if state in 'off':
+            Devices[1].Update(0, '0')
+        elif state in 'on':
+            Devices[1].Update(1, '100')
+        else:
+            Devices[1].Update(1, '50')
         self.heartbeatcounter += 1
 
     def _encrypt(self, data):
@@ -195,9 +202,30 @@ class TpLinkSmartPlugPlugin:
             err_code = realtime_result.get('err_code', 1)
 
             if err_code == 0:
-                Devices[2].Update(nValue=int(1 * realtime_result['current']), sValue=str(realtime_result['current']))
-                Devices[3].Update(nValue=int(1 * realtime_result['voltage']), sValue=str(realtime_result['voltage']))
-                Devices[4].Update(nValue=int(1 * realtime_result['power']), sValue=str(realtime_result['power']))
+                Devices[2].Update(nValue=0, sValue=str(round(realtime_result['current'],2)))
+                Devices[3].Update(nValue=0, sValue=str(round(realtime_result['voltage'],2)))
+                Devices[4].Update(nValue=0, sValue=str(round(realtime_result['power'],2)) + ";" + str(realtime_result['total']*1000))
+        if Parameters["Mode1"] == "HS110v2":
+            cmd = {
+                "emeter": {
+                    "get_realtime": {}
+                }
+            }
+
+            result = self._send_json_cmd(json.dumps(cmd))
+            Domoticz.Debug("got response: {}".format(result))
+
+            realtime_result = result.get('emeter', {}).get('get_realtime', {})
+            err_code = realtime_result.get('err_code', 1)
+
+            if err_code == 0:
+                Devices[2].Update(nValue=0, sValue=str(round(realtime_result['current_ma']/1000,2)))
+                Devices[3].Update(nValue=0, sValue=str(round(realtime_result['voltage_mv']/1000,2)))
+                Devices[4].Update(nValue=0, sValue=str(round(realtime_result['power_mw']/1000,2)) + ";" + str(realtime_result['total_wh']))
+
+
+#power = round(float(json_data['emeter']['get_realtime']['power_mw']) / 1000,2)
+
 
     def get_switch_state(self):
         cmd = {
